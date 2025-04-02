@@ -98,22 +98,22 @@ func initNetwork(_ []string) error {
 func (r *reconciler) reconcile() error {
 	node, err := r.c.CoreV1().Nodes().Get(context.Background(), r.nodeName, v1.GetOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get node: %w", err)
 	}
 	podCidrString := node.Spec.PodCIDR
 	_, podCidr, err := net.ParseCIDR(podCidrString)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable parse podcidr: %s error: %w", podCidrString, err)
 	}
 
 	// check if route already exists
 	link, err := netlink.LinkByName("lo")
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get link lo: %w", err)
 	}
 	routes, err := netlink.RouteList(link, netlink.FAMILY_V4)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get route list of lo: %w", err)
 	}
 	for _, r := range routes {
 		if r.Dst.String() == podCidrString {
@@ -125,7 +125,7 @@ func (r *reconciler) reconcile() error {
 	route := netlink.Route{LinkIndex: link.Attrs().Index, Scope: netlink.SCOPE_LINK, Dst: podCidr}
 	err = netlink.RouteAdd(&route)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to add route: %s to node: %w", route, err)
 	}
 	klog.Infof("route for %s successfully added", podCidrString)
 	return nil
