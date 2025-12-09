@@ -123,7 +123,7 @@ func (r *reconciler) reconcile() error {
 	}
 	// add route
 	route := netlink.Route{LinkIndex: link.Attrs().Index, Scope: netlink.SCOPE_LINK, Dst: podCidr}
-	err = netlink.RouteAdd(&route)
+	err = netlink.RouteReplace(&route)
 	if err != nil {
 		return fmt.Errorf("unable to add route: %s to node: %w", route, err)
 	}
