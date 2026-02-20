@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"time"
 
@@ -53,6 +54,13 @@ func initNetwork(_ []string) error {
 	if err != nil {
 		klog.Fatalln(err.Error())
 	}
+
+	// Configure HTTP transport to keep connections alive longer than reconcileInterval
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConns = 100
+	transport.MaxIdleConnsPerHost = 100
+	transport.IdleConnTimeout = reconcileInterval + 1*time.Minute
+	config.Transport = transport
 
 	// create the clientset
 	c, err := kubernetes.NewForConfig(config)
