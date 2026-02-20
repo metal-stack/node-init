@@ -56,11 +56,14 @@ func initNetwork(_ []string) error {
 	}
 
 	// Configure HTTP transport to keep connections alive longer than reconcileInterval
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConns = 100
-	transport.MaxIdleConnsPerHost = 100
-	transport.IdleConnTimeout = reconcileInterval + 1*time.Minute
-	config.Transport = transport
+	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if transport, ok := rt.(*http.Transport); ok {
+			transport.MaxIdleConns = 100
+			transport.MaxIdleConnsPerHost = 100
+			transport.IdleConnTimeout = reconcileInterval + 1*time.Minute
+		}
+		return rt
+	}
 
 	// create the clientset
 	c, err := kubernetes.NewForConfig(config)
