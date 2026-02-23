@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"time"
 
@@ -52,6 +53,14 @@ func initNetwork(_ []string) error {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		klog.Fatalln(err.Error())
+	}
+
+	// Configure HTTP transport to keep connections alive longer than reconcileInterval
+	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if transport, ok := rt.(*http.Transport); ok {
+			transport.IdleConnTimeout = reconcileInterval + 1*time.Minute
+		}
+		return rt
 	}
 
 	// create the clientset
